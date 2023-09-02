@@ -138,7 +138,7 @@ def get_args_parser():
     # Dataset parameters
     parser.add_argument('--data-path', default='/datasets01/imagenet_full_size/061417/', type=str,
                         help='dataset path')
-    parser.add_argument('--data-set', default='IMNET', choices=['CIFAR', 'IMNET', 'INAT', 'INAT19'],
+    parser.add_argument('--data-set', default='IMNET', choices=['CIFAR100', 'IMNET', 'INAT', 'INAT19'],
                         type=str, help='Image Net dataset path')
     parser.add_argument('--inat-category', default='name',
                         choices=['kingdom', 'phylum', 'class', 'order', 'supercategory', 'family', 'genus', 'name'],
@@ -246,25 +246,28 @@ def main(args):
         model = GFNet(
             img_size=args.input_size, 
             patch_size=16, embed_dim=384, depth=12, mlp_ratio=4,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+            norm_layer=partial(nn.LayerNorm, eps=1e-6), num_classes=args.nb_classes
         )
     elif args.arch == 'gfnet-ti':
         model = GFNet(
             img_size=args.input_size, 
             patch_size=16, embed_dim=256, depth=12, mlp_ratio=4,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+            norm_layer=partial(nn.LayerNorm, eps=1e-6),
+            num_classes=args.nb_classes
         )
     elif args.arch == 'gfnet-s':
         model = GFNet(
             img_size=args.input_size, 
             patch_size=16, embed_dim=384, depth=19, mlp_ratio=4, drop_path_rate=0.15,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+            norm_layer=partial(nn.LayerNorm, eps=1e-6),
+            num_classes=args.nb_classes
         )
     elif args.arch == 'gfnet-b':
         model = GFNet(
             img_size=args.input_size, 
             patch_size=16, embed_dim=512, depth=19, mlp_ratio=4, drop_path_rate=0.25,
-            norm_layer=partial(nn.LayerNorm, eps=1e-6)
+            norm_layer=partial(nn.LayerNorm, eps=1e-6),
+            num_classes=args.nb_classes
         )
     elif args.arch == 'gfnet-h-ti':
         model = GFNetPyramid(
@@ -272,20 +275,23 @@ def main(args):
             patch_size=4, embed_dim=[64, 128, 256, 512], depth=[3, 3, 10, 3],
             mlp_ratio=[4, 4, 4, 4],
             norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.1,
+            num_classes = args.nb_classes
         )
     elif args.arch == 'gfnet-h-s':
         model = GFNetPyramid(
             img_size=args.input_size, 
             patch_size=4, embed_dim=[96, 192, 384, 768], depth=[3, 3, 10, 3],
             mlp_ratio=[4, 4, 4, 4],
-            norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.2, init_values=1e-5
+            norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.2, init_values=1e-5,
+            num_classes = args.nb_classes
         )
     elif args.arch == 'gfnet-h-b':
         model = GFNetPyramid(
             img_size=args.input_size, 
             patch_size=4, embed_dim=[96, 192, 384, 768], depth=[3, 3, 27, 3],
             mlp_ratio=[4, 4, 4, 4],
-            norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.4, init_values=1e-6
+            norm_layer=partial(nn.LayerNorm, eps=1e-6), drop_path_rate=0.4, init_values=1e-6,
+            num_classes = args.nb_classes
         )
     else:
         raise NotImplementedError
