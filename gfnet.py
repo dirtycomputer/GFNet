@@ -14,6 +14,8 @@ from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 import torch.fft
 from torch.nn.modules.container import Sequential
+from torch_frft.frft_module import frft
+from torch_frft.dfrft_module import dfrft
 
 _logger = logging.getLogger(__name__)
 
@@ -47,11 +49,12 @@ class Mlp(nn.Module):
         return x
 
 class GlobalFilter(nn.Module):
-    def __init__(self, dim, h=14, w=8):
+    def __init__(self, dim, h=14, w=14):
         super().__init__()
-        self.complex_weight = nn.Parameter(torch.randn(h, w, dim, 2, dtype=torch.float32) * 0.02)
+        self.complex_weight = nn.Parameter(torch.randn(h, w, dim, 2, dtype=torch.float64) * 0.02)
         self.w = w
         self.h = h
+        self.fractional = nn.Parameter(torch.rand(1, dtype=torch.float64))
 
     def forward(self, x, spatial_size=None):
         B, N, C = x.shape
@@ -60,16 +63,19 @@ class GlobalFilter(nn.Module):
         else:
             a, b = spatial_size
 
-        x = x.view(B, a, b, C)
+        x = x.view(B, a, b, C).to(torch.float64)
 
-        x = x.to(torch.float32)
+        # x = torch.fft.fftn(x, dim=(1, 2), norm='ortho')
 
-        x = torch.fft.rfft2(x, dim=(1, 2), norm='ortho')
+        x = dfrft(dfrft(x, self.fractional, dim=1), self.fractional, dim=2)
+
         weight = torch.view_as_complex(self.complex_weight)
         x = x * weight
-        x = torch.fft.irfft2(x, s=(a, b), dim=(1, 2), norm='ortho')
 
-        x = x.reshape(B, N, C)
+        # x = torch.fft.ifftn(x, s=(a, b), dim=(1, 2), norm='ortho').real
+        x = dfrft(dfrft(x, -self.fractional, dim=1), -self.fractional, dim=2).real
+
+        x = x.reshape(B, N, C).to(torch.float32)
 
         return x
 
@@ -184,7 +190,7 @@ class GFNet(nn.Module):
         self.pos_drop = nn.Dropout(p=drop_rate)
 
         h = img_size // patch_size
-        w = h // 2 + 1
+        w = h
 
         if uniform_drop:
             print('using uniform droppath with expect rate', drop_path_rate)
@@ -318,7 +324,7 @@ class GFNetPyramid(nn.Module):
         cur = 0
         for i in range(4):
             h = sizes[i]
-            w = h // 2 + 1
+            w = h
 
             if no_layerscale:
                 print('using standard block')
