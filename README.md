@@ -24,7 +24,7 @@ import torch.fft
 class GlobalFilter(nn.Module):
     def __init__(self, dim, h=14, w=8):
         super().__init__()
-        self.complex_weight = nn.Parameter(torch.randn(h, w, dim, 2, dtype=torch.float32) * 0.02)
+        self.complex_weight = nn.Parameter(torch.randn(h, w, dim, 2, dtype=torch.float64) * 0.02)
 
     def forward(self, x):
         B, H, W, C = x.shape
