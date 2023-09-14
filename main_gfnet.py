@@ -347,7 +347,8 @@ def main(args):
                 new_weight = torch.nn.functional.interpolate(
                     origin_weight, size=(upsample_h, upsample_w), mode='bicubic', align_corners=True).permute(0, 2, 3, 1).reshape(upsample_h, upsample_w, num_heads, 2)
                 checkpoint_model[name] = new_weight
-        model.load_state_dict(checkpoint_model, strict=True)
+        missing_key, unexpected_key = model.load_state_dict(checkpoint_model, strict=False)
+        print(f"missing_key:{missing_key},unexpected_key:{unexpected_key}")
 
     model.to(device)
 
